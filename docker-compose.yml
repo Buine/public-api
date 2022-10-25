@@ -1,0 +1,116 @@
+version: '3.6'
+services:
+  public-api-tesis-new:
+    image: public-api-tesis-new
+    depends_on:
+      - user-ms-tesis-new
+      - integration-ms-tesis-new
+      - runner-ms-tesis-new
+      - query-ms-tesis-new
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - JWT_KEY=Holis
+      - USER_MS_URL=http://user-ms-tesis-new:8080/user-ms
+      - INTEGRATION_MS_URL=http://integration-ms-tesis-new:8080/integration-ms
+      - RUNNER_MS_URL=http://runner-ms-tesis-new:8080/runner-ms
+      - QUERY_MS_URL=http://query-ms-tesis-new:8080/query-ms
+
+  user-ms-tesis-new:
+    image: user-ms-tesis-new
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+    environment:
+      - SERVER_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=user-ms-db
+      - DB_USER=user-ms
+      - DB_PASSWORD=secret
+
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=user-ms-db
+      - POSTGRES_USER=user-ms
+      - POSTGRES_PASSWORD=secret
+
+    ports:
+      - "5432:5432"
+
+  integration-ms-tesis-new:
+    image: integration-ms-tesis-new
+    ports:
+      - "8082:8080"
+    depends_on:
+      - postgres-integration
+    environment:
+      - DATABASE_HOST=postgres-integration
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=integration-ms-db
+      - DATABASE_USERNAME=integration-ms
+      - DATABASE_PASSWORD=secret
+      - RUNNER_MS_URL=http://runner-ms-tesis-new:8080
+
+  runner-ms-tesis-new:
+    image: runner-ms-tesis-new
+    ports:
+      - "8083:8080"
+    depends_on:
+      - postgres-integration
+      - query-ms-tesis-new
+      - query-builder-ms-tesis-new
+    environment:
+      - DATABASE_HOST=postgres-integration
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=integration-ms-db
+      - DATABASE_USERNAME=integration-ms
+      - DATABASE_PASSWORD=secret
+      - QUERY_MS_URL=http://query-ms-tesis-new:8080
+      - QUERY_BUILDER_MS_URL=http://query-builder-ms-tesis-new:8080
+
+  postgres-integration:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=integration-ms-db
+      - POSTGRES_USER=integration-ms
+      - POSTGRES_PASSWORD=secret
+
+    ports:
+      - "5433:5432"
+
+  query-ms-tesis-new:
+    image: query-ms-tesis-new
+    ports:
+      - "8084:8080"
+    depends_on:
+      - integration-ms-tesis-new
+      - postgres-query
+    environment:
+      - INTEGRATION_MS_URL=http://integration-ms-tesis-new:8080
+      - DATABASE_HOST=postgres-query
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=query-ms-db
+      - DATABASE_USERNAME=query-ms
+      - DATABASE_PASSWORD=secret
+
+  postgres-query:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=query-ms-db
+      - POSTGRES_USER=query-ms
+      - POSTGRES_PASSWORD=secret
+
+    ports:
+      - "5434:5432"
+
+  query-builder-ms-tesis-new:
+    image: query-builder-ms-tesis-new
+    ports:
+      - "8085:8080"
